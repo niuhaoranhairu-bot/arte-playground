@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ARTE Playground Interactive + Pro</title>
+
+    <!-- p5.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Noto+Sans+SC:wght@400;700;900&family=Playfair+Display:wght@400;700;900&family=Poppins:wght@400;600;700;900&family=Roboto+Slab:wght@400;700;900&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+
+    <!-- ======================== CSS RESET ======================== -->
+    <style>
+        :root {
+            --font-poppins: 'Poppins', 'Noto Sans SC', sans-serif;
+            --font-montserrat: 'Montserrat', 'Noto Sans SC', sans-serif;
+            --font-inter: 'Inter', 'Noto Sans SC', sans-serif;
+            --font-playfair: 'Playfair Display', 'Noto Serif SC', serif;
+            --font-roboto-slab: 'Roboto Slab', 'Noto Sans SC', serif;
+            --font-happy: 'ZCOOL KuaiLe', cursive;
+            --font-poster: 'ZCOOL QingKe HuangYou', sans-serif;
+
+            --font-h1: var(--font-poppins);
+            --h1-size: 1;
+            --h1-spacing: -2px;
+            --h1-leading: 0.9;
+            --h1-weight: 700;
+
+            --font-sub: var(--font-inter);
+            --sub-size: 1;
+            --sub-spacing: 0px;
+            --sub-leading: 1.2;
+            --sub-weight: 600;
+
+            --font-info: var(--font-inter);
+            --info-size: 1;
+            --info-spacing: 1px;
+            --info-leading: 1.2;
+            --info-weight: 700;
+
+            --base-scale: 1;
+
+            --bg-color: #1a1a1a;
+            --panel-bg: rgba(20,20,20,0.98);
+            --accent-color: #0044cc;
+            --text-color: white;
+            --box-bg-color: #0044cc;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        #viewport {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            overflow: hidden;
+        }
+
+        #board-anchor { width: 0; height: 0; position: relative; display:flex; justify-content:center; align-items:center; }
+
+        #art-board {
+            position: absolute;
+            background-color: var(--box-bg-color);
+            box-shadow: 0 0 80px rgba(0,0,0,0.7);
+            overflow: hidden;
+            transform-origin: center center;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        /* overlay */
+        #overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            padding: 5%;
+            box-sizing: border-box;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .content-top {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .text-box {
+            background-color: var(--box-bg-color);
+            color: var(--text-color);
+            display: inline-block;
+            padding: 15px 25px;
+            pointer-events: auto;
+        }
+
+        h1 {
+            font-family: var(--font-h1);
+            font-size: calc(5rem * var(--base-scale) * var(--h1-size));
+            line-height: var(--h1-leading);
+            letter-spacing: var(--h1-spacing);
+            font-weight: var(--h1-weight);
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .info-item {
+            font-family: var(--font-sub);
+            font-size: calc(1.5rem * var(--sub-size));
+            line-height: var(--sub-leading);
+            font-weight: var(--sub-weight);
+            padding: 10px 20px;
+        }
+
+        .footer {
+            font-family: var(--font-info);
+            font-size: calc(1.2rem * var(--info-size));
+            letter-spacing: var(--info-spacing);
+            font-weight: var(--info-weight);
+            padding: 10px 20px;
+        }
+
+        /* control panel */
+        #controls {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            width: 340px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            color: white;
+            padding-bottom: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            cursor:pointer;
+        }
+
+        .panel-title { font-weight:800; text-transform:uppercase; font-size:0.9rem; }
+
+        .panel-content { padding:20px; display:flex; flex-direction:column; gap:15px; overflow-y:auto; max-height:70vh; }
+
+        input[type="range"] { width:100%; }
+        select { width:100%; padding:8px; background:#222; color:white; border:1px solid #555; }
+        .btn { padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:700; }
+
+        .btn-primary { background:var(--accent-color); }
+        .btn-secondary { background:#444; border:1px solid #666; }
+
+        #recording-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: crimson;
+            padding: 10px 20px;
+            border-radius: 50px;
+            display:none;
+            color:white;
+            font-weight:bold;
+            z-index:2000;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Recording status -->
+<div id="recording-status" onclick="stopRecording()">
+    <div style="width:10px; height:10px; background:white; border-radius:2px;"></div>
+    停止录制 (点击结束)
+</div>
+
+<div id="viewport">
+    <div id="board-anchor">
+        <div id="art-board">
+
+            <div id="overlay">
+                <div class="content-top">
+                    <div class="text-box h1-box">
+                        <h1 id="txt-h1" contenteditable="true">ARTE PLAYGROUND</h1>
+                    </div>
+
+                    <div class="info-list">
+                        <div class="text-box info-item" id="txt-info1" contenteditable="true">— <br>un week-end pour imaginer<br>les services de demain !</div>
+                        <div class="text-box info-item" id="txt-info2" contenteditable="true">— <br>du 21 au 23<br>octobre 2025</div>
+                        <div class="text-box info-item" id="txt-info3" contenteditable="true">
+                            — <br>au Numa<br>
+                            <div class="small-text">39, rue du Caire / 75002 Paris</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-box footer" id="txt-footer" contenteditable="true">
+                    arte | NUMA | SIMPLON
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ================== 控制面板 ================== -->
+<div id="controls">
+    <div class="panel-header"><span class="panel-title">创作控制台</span></div>
+    <div class="panel-content">
+
+        <button class="btn btn-primary" onclick="toggleBrowserFullscreen()">🖥️ 进入沉浸全屏</button>
+        <button class="btn btn-primary" onclick="startRecording()">🎥 录制动态背景 (MP4)</button>
+
+        <div class="divider"></div>
+
+        <select id="color-mode" onchange="updateColorMode()">
+            <option value="classic">🔵 经典蓝</option>
+            <option value="dopamine">🌈 多巴胺</option>
+            <option value="solid">🎨 纯色</option>
+        </select>
+
+        <input id="ai-theme" placeholder="AI主题 (如: 赛博朋克)" />
+
+        <button class="btn btn-secondary" onclick="saveArtwork()">📷 保存高清图</button>
+    </div>
+</div>
+
+<!-- ================== p5.js BACKGROUND SCRIPT ================== -->
+<script>
+let tiles = [];
+let cols, rows;
+let params = {
+    gridSize: 60,
+    dotScale: 3,
+    lineSpacing: 4,
+    triDensity: 1,
+    noiseScale: 0.1,
+    colorMode: 'classic',
+    hue: 0,
+    sat: 80
+};
+
+function setup() {
+    let art = document.getElementById("art-board");
+    let w = 1080, h = 1920;
+    art.style.width = w + "px";
+    art.style.height = h + "px";
+
+    let cv = createCanvas(w, h);
+    cv.parent("art-board");
+
+    cols = ceil(width / params.gridSize);
+    rows = ceil(height / params.gridSize);
+
+    for (let i=0;i<cols;i++){
+        tiles[i]=[];
+        for(let j=0;j<rows;j++){
+            tiles[i][j] = random();
+        }
+    }
+}
+
+function draw() {
+    background(10);
+
+    noStroke();
+    fill(255, 255, 255, 40);
+
+    for (let i=0;i<cols;i++){
+        for(let j=0;j<rows;j++){
+            let x = i * params.gridSize;
+            let y = j * params.gridSize;
+
+            let v = noise(i*params.noiseScale, j*params.noiseScale, frameCount*0.005);
+
+            ellipse(x, y, params.dotScale * v * 10);
+        }
+    }
+}
+</script>
+
+<!-- ================== 工具函数 ================== -->
+<script>
+function saveArtwork(){
+    html2canvas(document.getElementById("art-board")).then(canvas=>{
+        let url = canvas.toDataURL("image/png");
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = "artwork.png";
+        a.click();
+    });
+}
+
+function toggleBrowserFullscreen(){
+    if(!document.fullscreenElement){
+        document.documentElement.requestFullscreen();
+    }else{
+        document.exitFullscreen();
+    }
+}
+
+function startRecording(){
+    let rec = document.getElementById("recording-status");
+    rec.style.display="flex";
+}
+
+function stopRecording(){
+    let rec = document.getElementById("recording-status");
+    rec.style.display="none";
+}
+
+function updateColorMode(){}
+</script>
+
+</body>
+</html>
